@@ -23,22 +23,30 @@ contract DAOGovernance is IGovernance, Timelock, Treasury {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         
-        // Use the Enums directly because we inherit from IGovernance
         typeConfigs[ProposalType.HighConviction] = Thresholds(60, 40, 7 days);
         typeConfigs[ProposalType.Experimental] = Thresholds(50, 25, 3 days);
         typeConfigs[ProposalType.Operational] = Thresholds(50, 15, 1 days);
     }
 
+    /// @notice Calculates the total voting power of a member including delegations
+    /// @param memberAddr The address of the DAO member
+    /// @return Total voting power (Square Root of Stake + Delegated Power)
     function getVotingPower(address memberAddr) public view override returns (uint256) {
         uint256 stake = members[memberAddr].stake;
         return VotingPowerCalculator.calculatePower(stake) + delegatedPower[memberAddr];
     }
 
+    /// @notice Creates a new proposal for treasury allocation
+    /// @param pType The category of the proposal (High-Conviction, Experimental, Operational)
+    /// @param recipient The address to receive funds if the proposal passes
+    /// @param amount The amount of ETH to be transferred from the treasury
+    /// @param description A brief summary of the proposal goal
+    /// @return id The unique ID of the newly created proposal
     function propose(
         ProposalType pType, 
         address recipient, 
         uint256 amount, 
-        string calldata description // Changed to calldata to match interface
+        string calldata description
     ) external override returns (uint256) {
         require(getVotingPower(msg.sender) >= VotingPowerCalculator.calculatePower(MIN_PROPOSAL_STAKE), "Stake low");
         
@@ -59,6 +67,9 @@ contract DAOGovernance is IGovernance, Timelock, Treasury {
         return id;
     }
 
+    /// @notice Casts a vote on an active proposal
+    /// @param proposalId The ID of the proposal to vote on
+    /// @param support 0 for Against, 1 for For, 2 for Abstain
     function castVote(uint256 proposalId, uint8 support) external override {
         require(getProposalState(proposalId) == ProposalState.Active, "Not active");
         Proposal storage p = proposals[proposalId];
@@ -74,6 +85,8 @@ contract DAOGovernance is IGovernance, Timelock, Treasury {
         emit VoteCast(proposalId, msg.sender, support, weight);
     }
 
+    /// @notice Moves a successful proposal into the Timelock queue
+    /// @param proposalId The ID of the passed proposal
     function queue(uint256 proposalId) external override {
         require(getProposalState(proposalId) == ProposalState.Succeeded, "Not passed");
         Proposal storage p = proposals[proposalId];
@@ -82,6 +95,8 @@ contract DAOGovernance is IGovernance, Timelock, Treasury {
         emit ProposalQueued(proposalId, block.timestamp + delay);
     }
 
+    /// @notice Executes a queued proposal after the timelock expires
+    /// @param proposalId The ID of the proposal to execute
     function execute(uint256 proposalId) external override onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
         require(isReady(proposalId), "Timelock");
         Proposal storage p = proposals[proposalId];
@@ -92,6 +107,9 @@ contract DAOGovernance is IGovernance, Timelock, Treasury {
         emit ProposalExecuted(proposalId);
     }
 
+    /// @notice Returns the current lifecycle state of a proposal
+    /// @param proposalId The ID of the proposal
+    /// @return Current state (Active, Succeeded, Defeated, etc.)
     function getProposalState(uint256 proposalId) public view override(IGovernance, Timelock) returns (ProposalState) {
         Proposal storage p = proposals[proposalId];
         if (p.executed) return ProposalState.Executed;
