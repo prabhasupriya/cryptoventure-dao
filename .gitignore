@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing and Coverage
+coverage/
+coverage.json
+typechain/
+typechain-types/
+
+# Hardhat files
+artifacts/
+cache/
+data/
+
+# Environment Variables (CRITICAL: DO NOT REMOVE)
+.env
+.env.local
+.env.testing
+
+# VS Code / IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
