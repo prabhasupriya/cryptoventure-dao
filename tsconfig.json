@@ -11,6 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "mocha", "chai", "hardhat"]
   },
-  "include": ["./scripts/**/*.ts", "./test/**/*.ts", "./typechain-types", "scripts/deploy.ts", "test/timelock.test.js", "test/governance.test.js", "test/voting.test.js"],
-  "files": ["./hardhat.config.cjs"]
+  "include": ["./scripts/**/*.ts", "./test/**/*.ts", "./typechain-types", "scripts/deploy.ts", "test/timelock.test.ts", "test/governance.test.ts", "test/voting.test.ts"],
+  "files": ["hardhat.config.ts"]
 }
